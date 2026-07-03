@@ -1,0 +1,31 @@
+# Global owners
+* @lexichron-ai
+
+# Core services
+/src/services/dqs/ @lexichron-ai
+/src/services/auth/ @lexichron-ai
+/src/services/payments/ @lexichron-ai
+/src/services/analytics/ @lexichron-ai
+
+# Frontend
+/src/components/ @lexichron-ai
+/src/styles/ @lexichron-ai
+/src/pages/ @lexichron-ai
+
+# Backend
+/functions/ @lexichron-ai
+/src/api/ @lexichron-ai
+
+# Infrastructure & DevOps
+/.github/workflows/ @lexichron-ai
+/docs/ @lexichron-ai
+
+# Tests
+/tests/ @lexichron-ai
+/src/**/*.test.ts @lexichron-ai
+
+# Configuration
+/package.json @lexichron-ai
+/.env.example @lexichron-ai
+/firebase.json @lexichron-ai
+/tsconfig.json @lexichron-ai
