@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DQS Trends Dashboard</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #3b82f6;
+      --good: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --border: #e5e7eb;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    h1, h2 { margin: 0 0 10px; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.05rem; }
+    .muted { color: var(--muted); font-size: 0.92rem; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .metric {
+      font-size: 1.55rem;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .metric-change { font-size: 0.9rem; margin-top: 4px; }
+    .positive { color: var(--good); }
+    .negative { color: var(--bad); }
+
+    .trend {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .trend-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 50px;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+
+    .bar-wrap {
+      height: 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+    }
+
+    .list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .stack {
+      display: flex;
+      width: 100%;
+      height: 20px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .stack > div { height: 100%; }
+    .civ-high { background: var(--good); }
+    .civ-medium { background: var(--warn); }
+    .civ-low { background: var(--bad); }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="panel toolbar">
+      <div>
+        <h1>DQS Trends Dashboard</h1>
+        <div class="muted">Aggregate discourse quality trends for Civic Platform and Enterprise tiers.</div>
+      </div>
+      <label>
+        Tier:
+        <select id="tierSelect" aria-label="Select subscription tier">
+          <option value="civic">Civic Platform</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="cards" id="summaryCards"></section>
+
+    <section class="panel">
+      <h2>Average DQS Over Time</h2>
+      <div class="muted" id="trendDescription"></div>
+      <div class="trend" id="trendRows"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Most Common Fallacies</h2>
+      <ul class="list" id="fallaciesList"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>Civility Distribution</h2>
+      <div class="stack" aria-label="Civility distribution">
+        <div id="highCivility" class="civ-high"></div>
+        <div id="mediumCivility" class="civ-medium"></div>
+        <div id="lowCivility" class="civ-low"></div>
+      </div>
+      <div class="legend" id="civilityLegend"></div>
+    </section>
+  </main>
+
+  <script>
+    const dashboardData = {
+      civic: {
+        label: "Civic Platform",
+        periods: [
+          { month: "Jan", avgDqs: 64 },
+          { month: "Feb", avgDqs: 66 },
+          { month: "Mar", avgDqs: 67 },
+          { month: "Apr", avgDqs: 69 },
+          { month: "May", avgDqs: 71 },
+          { month: "Jun", avgDqs: 72 }
+        ],
+        fallacies: [
+          { name: "Strawman", count: 134, pct: 31 },
+          { name: "Ad Hominem", count: 122, pct: 28 },
+          { name: "False Dilemma", count: 95, pct: 22 },
+          { name: "Slippery Slope", count: 82, pct: 19 }
+        ],
+        civility: { high: 48, medium: 34, low: 18 }
+      },
+      enterprise: {
+        label: "Enterprise",
+        periods: [
+          { month: "Jan", avgDqs: 68 },
+          { month: "Feb", avgDqs: 69 },
+          { month: "Mar", avgDqs: 71 },
+          { month: "Apr", avgDqs: 73 },
+          { month: "May", avgDqs: 75 },
+          { month: "Jun", avgDqs: 76 }
+        ],
+        fallacies: [
+          { name: "Ad Hominem", count: 215, pct: 34 },
+          { name: "Strawman", count: 188, pct: 30 },
+          { name: "Appeal to Authority", count: 129, pct: 20 },
+          { name: "False Cause", count: 98, pct: 16 }
+        ],
+        civility: { high: 55, medium: 30, low: 15 }
+      }
+    };
+
+    const tierSelect = document.getElementById("tierSelect");
+    const summaryCards = document.getElementById("summaryCards");
+    const trendRows = document.getElementById("trendRows");
+    const trendDescription = document.getElementById("trendDescription");
+    const fallaciesList = document.getElementById("fallaciesList");
+    const civilityLegend = document.getElementById("civilityLegend");
+    const highCivility = document.getElementById("highCivility");
+    const mediumCivility = document.getElementById("mediumCivility");
+    const lowCivility = document.getElementById("lowCivility");
+
+    function renderDashboard(tierKey) {
+      const data = dashboardData[tierKey];
+      const latest = data.periods[data.periods.length - 1];
+      const previous = data.periods[data.periods.length - 2];
+      const delta = latest.avgDqs - previous.avgDqs;
+      const avgDqsAll = Math.round(data.periods.reduce((sum, p) => sum + p.avgDqs, 0) / data.periods.length);
+      const totalFallacies = data.fallacies.reduce((sum, f) => sum + f.count, 0);
+
+      summaryCards.innerHTML = `
+        <article class="card">
+          <div class="muted">Tier</div>
+          <div class="metric">${data.label}</div>
+        </article>
+        <article class="card">
+          <div class="muted">Current Avg DQS</div>
+          <div class="metric">${latest.avgDqs}</div>
+          <div class="metric-change ${delta >= 0 ? "positive" : "negative"}">${delta >= 0 ? "+" : ""}${delta} vs prior period</div>
+        </article>
+        <article class="card">
+          <div class="muted">6-Month Avg DQS</div>
+          <div class="metric">${avgDqsAll}</div>
+        </article>
+        <article class="card">
+          <div class="muted">Observed Fallacies</div>
+          <div class="metric">${totalFallacies}</div>
+        </article>
+      `;
+
+      const maxScore = Math.max(...data.periods.map((p) => p.avgDqs));
+      trendRows.innerHTML = data.periods.map((p) => `
+        <div class="trend-row">
+          <span>${p.month}</span>
+          <div class="bar-wrap"><div class="bar" style="width:${Math.round((p.avgDqs / maxScore) * 100)}%"></div></div>
+          <strong>${p.avgDqs}</strong>
+        </div>
+      `).join("");
+      trendDescription.textContent = `${data.periods[0].month} to ${latest.month} aggregate average DQS trend`;
+
+      fallaciesList.innerHTML = data.fallacies.map((f) => `
+        <li>
+          <span>${f.name}</span>
+          <span>${f.count} (${f.pct}%)</span>
+        </li>
+      `).join("");
+
+      highCivility.style.width = `${data.civility.high}%`;
+      mediumCivility.style.width = `${data.civility.medium}%`;
+      lowCivility.style.width = `${data.civility.low}%`;
+
+      civilityLegend.innerHTML = `
+        <span>High: ${data.civility.high}%</span>
+        <span>Medium: ${data.civility.medium}%</span>
+        <span>Low: ${data.civility.low}%</span>
+      `;
+    }
+
+    tierSelect.addEventListener("change", (event) => renderDashboard(event.target.value));
+    renderDashboard(tierSelect.value);
+  </script>
+</body>
+</html>

@@ -42,6 +42,7 @@
 |----------|---------|
 | [README.md](README.md) | Project overview & features |
 | [docs/API.md](docs/API.md) | API endpoints & capabilities |
+| [docs/dqs-analytics-dashboard.html](docs/dqs-analytics-dashboard.html) | DQS trend dashboard prototype |
 | [STATUS_DASHBOARD.md](STATUS_DASHBOARD.md) | Current project status |
 | GitHub Issues | Feature tracking & priorities |
 
@@ -123,6 +124,7 @@ SocratesOS/
 - 🔧 **Setup Guide** - Full implementation: [SETUP_GUIDE.md](SETUP_GUIDE.md)
 - 🏗️ **Architecture** - System design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 🔌 **API Docs** - Endpoints reference: [docs/API.md](docs/API.md)
+- 📈 **DQS Dashboard** - Analytics trends: [docs/dqs-analytics-dashboard.html](docs/dqs-analytics-dashboard.html)
 - 🚀 **Deployment** - Launch procedures: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - 🤝 **Contributing** - How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md)
 
