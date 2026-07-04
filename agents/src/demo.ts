@@ -106,7 +106,7 @@ function signalIcon(signal: string): string {
     case "healthy":
       return "✅";
     case "degraded":
-      return "⚠️ ";
+      return "⚠️";
     case "down":
       return "🔴";
     default:
@@ -165,7 +165,7 @@ if (summary.blockers.length === 0) {
 } else {
   for (const b of summary.blockers) {
     const color = b.severity === "critical" ? RED : YELLOW;
-    const icon = b.severity === "critical" ? "🔴" : "⚠️ ";
+    const icon = b.severity === "critical" ? "🔴" : "⚠️";
     console.log(
       `  ${icon} ${color}[${b.severity.toUpperCase()}]${RESET} ${b.description}`
     );
