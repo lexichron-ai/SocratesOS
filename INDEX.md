@@ -24,6 +24,7 @@
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute & code standards |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design & how it works |
 | [docs/API.md](docs/API.md) | Complete API reference |
+| [docs/AGENTS.md](docs/AGENTS.md) | Multi-agent coordinator architecture |
 
 **Start with**: README.md → CONTRIBUTING.md → Start coding
 
@@ -106,6 +107,12 @@ SocratesOS/
 │   ├── functions/                         ⚡ Cloud Functions
 │   └── tests/                             🧪 Test suites
 │
+├── 🤖 AGENT SYSTEM (agents/)
+│   ├── agents/src/types.ts                📋 Check-in & health contracts
+│   ├── agents/src/coordinator.ts          🧠 CoordinatorAgent
+│   ├── agents/src/specialists/            👥 Specialist agents
+│   └── docs/AGENTS.md                     📖 Agent architecture guide
+│
 └── 📊 PROJECT MANAGEMENT
     ├── Issues                             https://github.com/lexichron-ai/SocratesOS/issues
     ├── Pull Requests                      https://github.com/lexichron-ai/SocratesOS/pulls
@@ -124,6 +131,7 @@ SocratesOS/
 - 🏗️ **Architecture** - System design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 🔌 **API Docs** - Endpoints reference: [docs/API.md](docs/API.md)
 - 🚀 **Deployment** - Launch procedures: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- 🤖 **Agent System** - Coordinator & specialists: [docs/AGENTS.md](docs/AGENTS.md)
 - 🤝 **Contributing** - How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ### Configuration
