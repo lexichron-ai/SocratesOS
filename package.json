@@ -1,0 +1,18 @@
+{
+  "name": "socratesai",
+  "description": "SocratesOS - Discourse Quality Analysis Platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "firebase emulators:start",
+    "deploy:staging": "firebase deploy --project staging-socratesai",
+    "deploy:prod": "firebase deploy --project prod-socratesai",
+    "build": "npm --prefix functions run build",
+    "lint": "npm --prefix functions run lint",
+    "test": "npm --prefix functions run test",
+    "install:all": "npm --prefix functions install"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
