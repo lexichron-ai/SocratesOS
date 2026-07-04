@@ -1,0 +1,42 @@
+{
+  "name": "@socratesai/functions",
+  "version": "0.1.0",
+  "description": "Firebase Cloud Functions for SocratesOS – DQS engine, auth, and payments",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "test": "jest",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.test.ts"
+    ],
+    "moduleNameMapper": {
+      "^firebase-admin(.*)$": "<rootDir>/src/__mocks__/firebase-admin.ts",
+      "^firebase-functions(.*)$": "<rootDir>/src/__mocks__/firebase-functions.ts"
+    }
+  },
+  "private": true
+}
