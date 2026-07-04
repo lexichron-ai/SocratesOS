@@ -70,35 +70,28 @@ export function buildMiddlewareCheckIn(
       "Documented Firestore schema and collection structure",
       "Specified JWT authentication flow",
       "Outlined Stripe webhook handler requirements",
+      "Implemented DQS engine with rule-based and Gemini AI modes (functions/src/services/dqs/)",
+      "Implemented analyzeDqs HTTP Cloud Function endpoint (functions/src/api/dqs.ts)",
+      "DQS engine auto-upgrades to Gemini AI when GEMINI_API_KEY is present",
       ...accomplishments,
     ],
 
     currentTasks: [
       {
-        title: "Scaffold Firebase Cloud Functions project (functions/)",
-        progressPercent: 0,
-      },
-      {
         title: "Implement /api/auth endpoints (register, login, refresh)",
-        progressPercent: 0,
-      },
-      {
-        title: "Implement DQS analysis Cloud Function",
         progressPercent: 0,
       },
       {
         title: "Implement Stripe checkout session and webhook handler",
         progressPercent: 0,
       },
+      {
+        title: "Deploy Cloud Functions to Firebase staging",
+        progressPercent: 0,
+      },
     ],
 
     blockers: [
-      {
-        description:
-          "functions/ directory does not exist – Cloud Functions not yet bootstrapped",
-        ownedBy: "middleware",
-        severity: "critical" as const,
-      },
       ...dynamicBlockers,
       ...blockerDescriptions.map((description) => ({
         description,
@@ -108,19 +101,18 @@ export function buildMiddlewareCheckIn(
     ],
 
     suggestedNextSteps: [
-      "Run `firebase init functions` to bootstrap the Cloud Functions project",
+      "Add GEMINI_API_KEY to Firebase Functions config: `firebase functions:config:set gemini.key=<key>` (get key from aistudio.google.com/apikey)",
       "Create functions/src/api/auth.ts with register, login, and token-refresh handlers",
-      "Create functions/src/api/dqs.ts wrapping the Gemini API call",
       "Create functions/src/api/payments.ts for Stripe checkout and webhook",
       "Set Firebase Functions config: `firebase functions:config:set stripe.secret=<key>`",
-      "Set Firebase Functions config: `firebase functions:config:set gemini.key=<key>`",
+      "Run `firebase deploy --only functions` to deploy the DQS endpoint to staging",
     ],
 
     health: {
       signal: healthSignal,
       note:
         healthNote ??
-        "Cloud Functions not yet bootstrapped. API contract documented.",
+        "DQS engine implemented with Gemini AI support. Auth and payments endpoints pending.",
       lastCheckedAt: timestamp,
     },
 
@@ -144,9 +136,10 @@ export function buildMiddlewareCheckIn(
       },
       {
         dependsOn: "gemini",
-        reason: "Requires Gemini API key for DQS engine",
+        reason: "Requires Gemini API key for DQS AI-mode evaluation",
         satisfied: geminiConfigured,
       },
     ],
   };
 }
+
