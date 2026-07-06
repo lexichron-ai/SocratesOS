@@ -2,8 +2,12 @@
 
 ## How to Configure GitHub Secrets for SocratesOS
 
-**Time needed**: 15-20 minutes  
+**Time needed**: 20-30 minutes  
 **Access**: https://github.com/lexichron-ai/SocratesOS/settings/secrets/actions
+
+> ⚠️ **Note:** The deploy workflow uses **Workload Identity Federation** (keyless auth) for Firebase/GCP.
+> This avoids the need for service account JSON keys, which are blocked by the GCP org policy
+> `constraints/iam.disableServiceAccountKeyCreation`. No JSON key file is ever created or stored.
 
 ---
 
@@ -11,43 +15,89 @@
 
 | Secret | Type | Priority | Status |
 |--------|------|----------|--------|
-| `FIREBASE_TOKEN_STAGING` | Firebase | 🔴 Critical | ⏳ Pending |
-| `FIREBASE_TOKEN_PROD` | Firebase | 🔴 Critical | ⏳ Pending |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_STAGING` | GCP/Firebase | 🔴 Critical | ⏳ Pending |
+| `GCP_SERVICE_ACCOUNT_STAGING` | GCP/Firebase | 🔴 Critical | ⏳ Pending |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_PROD` | GCP/Firebase | 🔴 Critical | ⏳ Pending |
+| `GCP_SERVICE_ACCOUNT_PROD` | GCP/Firebase | 🔴 Critical | ⏳ Pending |
 | `SONAR_TOKEN` | SonarCloud | 🟡 Important | ⏳ Pending |
 | `STRIPE_SECRET_KEY` | Stripe | 🔴 Critical | ✅ Have account |
 | `GEMINI_API_KEY` | Google | 🟡 Important | ⏳ Pending |
 
 ---
 
-## 1️⃣ Firebase Tokens (CRITICAL)
+## 1️⃣ Firebase / GCP – Workload Identity Federation (CRITICAL)
 
-### Step 1: Generate Firebase Token
-```bash
-# Install Firebase CLI if not already installed
-npm install -g firebase-tools
+This is the **keyless** approach required when your GCP org blocks service account key creation.
+GitHub Actions gets a short-lived token automatically — no JSON file needed.
 
-# Login and generate CI token
-firebase login:ci
+### Step 1: Create a Service Account in GCP
 
-# Follow the browser prompts to authenticate
-# A token will be generated - COPY IT
+In [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts):
+
+1. Select your **staging project** (e.g. `staging-socratesai`)
+2. Click **Create Service Account**
+3. Name: `github-actions-deploy`
+4. Grant it the **Firebase Admin** role (or `roles/firebase.admin`)
+5. Click **Done** — do NOT create a key
+
+Copy the full service account email, e.g.:
+`github-actions-deploy@staging-socratesai.iam.gserviceaccount.com`
+
+Repeat for the **production project**.
+
+### Step 2: Create a Workload Identity Pool
+
+In [Workload Identity Federation](https://console.cloud.google.com/iam-admin/workload-identity-pools):
+
+1. Click **Create Pool**
+2. Name: `github-actions`
+3. Click **Add Provider** → choose **OpenID Connect (OIDC)**
+4. Provider name: `github`
+5. Issuer URL: `https://token.actions.githubusercontent.com`
+6. Under **Attribute Mapping**, add:
+   - `google.subject` → `assertion.sub`
+   - `attribute.repository` → `assertion.repository`
+7. Under **Attribute Conditions**, add:
+   ```
+   attribute.repository == "lexichron-ai/SocratesOS"
+   ```
+8. Click **Save**
+
+### Step 3: Grant the Service Account Access to the Pool
+
+1. In the pool you created, click **Grant Access**
+2. Select your service account (`github-actions-deploy@...`)
+3. Under **Select principals**, choose:
+   - Attribute: `repository`
+   - Value: `lexichron-ai/SocratesOS`
+4. Click **Save**
+
+### Step 4: Get the Provider Resource Name
+
+After creating the pool, copy the **full provider name**. It looks like:
+```
+projects/123456789/locations/global/workloadIdentityPools/github-actions/providers/github
 ```
 
-### Step 2: Add to GitHub
-- Go to: https://github.com/lexichron-ai/SocratesOS/settings/secrets/actions
-- Click: **New repository secret**
-- Name: `FIREBASE_TOKEN_STAGING`
-- Value: Paste your Firebase token
-- Click: **Add secret**
+You can find it in the pool details page.
 
-### Step 3: Repeat for Production
-- Do the same process again for `FIREBASE_TOKEN_PROD` 
-- Use the same token (it works for both environments)
+### Step 5: Add Secrets to GitHub
+
+Go to: https://github.com/lexichron-ai/SocratesOS/settings/secrets/actions
+
+| Secret Name | Value |
+|---|---|
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_STAGING` | Full provider resource name (staging project) |
+| `GCP_SERVICE_ACCOUNT_STAGING` | `github-actions-deploy@staging-socratesai.iam.gserviceaccount.com` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_PROD` | Full provider resource name (prod project) |
+| `GCP_SERVICE_ACCOUNT_PROD` | `github-actions-deploy@prod-socratesai.iam.gserviceaccount.com` |
 
 **Result:**
 ```
-✅ FIREBASE_TOKEN_STAGING - Added
-✅ FIREBASE_TOKEN_PROD - Added
+✅ GCP_WORKLOAD_IDENTITY_PROVIDER_STAGING - Added
+✅ GCP_SERVICE_ACCOUNT_STAGING - Added
+✅ GCP_WORKLOAD_IDENTITY_PROVIDER_PROD - Added
+✅ GCP_SERVICE_ACCOUNT_PROD - Added
 ```
 
 ---
@@ -152,7 +202,8 @@ If you see all 5, you're ready to push code! 🚀
 
 | Secret | Used By | Purpose |
 |--------|---------|---------|
-| `FIREBASE_TOKEN_*` | Deploy workflow | Authenticate with Firebase for deployment |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER_*` | Deploy workflow | Keyless GCP auth via GitHub OIDC token |
+| `GCP_SERVICE_ACCOUNT_*` | Deploy workflow | Identity to impersonate for Firebase deploy |
 | `STRIPE_SECRET_KEY` | API endpoints | Process payments and manage subscriptions |
 | `GEMINI_API_KEY` | DQS service | Evaluate discourse quality with AI |
 | `SONAR_TOKEN` | Quality workflow | Analyze code quality metrics |
@@ -166,13 +217,18 @@ If you see all 5, you're ready to push code! 🚀
 - **Check**: Secret is added to correct repository
 - **Wait**: Sometimes takes a few minutes to propagate
 
-### "Invalid token" error during deployment
-- **Verify**: Token is valid and not expired
-- **Verify**: Token has correct permissions
-- **Regenerate**: Try creating a new token
+### "Unable to create service account key" in GCP
+- **Cause**: Org policy `constraints/iam.disableServiceAccountKeyCreation` is active
+- **Solution**: Use Workload Identity Federation as documented above — no key needed
+
+### "Invalid identity token" / WIF auth failure
+- **Check**: The Workload Identity Pool issuer URL is exactly `https://token.actions.githubusercontent.com`
+- **Check**: The attribute condition matches `lexichron-ai/SocratesOS`
+- **Check**: The service account has been granted access to the WIF pool
+- **Check**: The `id-token: write` permission is set in the workflow (already done)
 
 ### "Deploy still failing after adding secrets"
-- **Check**: All 5 secrets are configured
+- **Check**: All 4 GCP secrets are configured
 - **Check**: Secret names match exactly
 - **View**: GitHub Actions logs for specific error
 - **Try**: Push a test commit to trigger workflow
@@ -204,16 +260,23 @@ If you see all 5, you're ready to push code! 🚀
 
 Use this to track your progress:
 
-- [ ] Firebase token generated
-- [ ] FIREBASE_TOKEN_STAGING added
-- [ ] FIREBASE_TOKEN_PROD added
+- [ ] GCP Workload Identity Pool created (staging project)
+- [ ] Service account `github-actions-deploy` created (staging)
+- [ ] WIF pool granted access to service account (staging)
+- [ ] GCP_WORKLOAD_IDENTITY_PROVIDER_STAGING added to GitHub
+- [ ] GCP_SERVICE_ACCOUNT_STAGING added to GitHub
+- [ ] GCP Workload Identity Pool created (prod project)
+- [ ] Service account `github-actions-deploy` created (prod)
+- [ ] WIF pool granted access to service account (prod)
+- [ ] GCP_WORKLOAD_IDENTITY_PROVIDER_PROD added to GitHub
+- [ ] GCP_SERVICE_ACCOUNT_PROD added to GitHub
 - [ ] Stripe secret key obtained
 - [ ] STRIPE_SECRET_KEY added
 - [ ] Gemini API key obtained
 - [ ] GEMINI_API_KEY added
 - [ ] SonarCloud token obtained
 - [ ] SONAR_TOKEN added
-- [ ] All 5 secrets verified on GitHub
+- [ ] All secrets verified on GitHub
 - [ ] Ready to push code! 🚀
 
 ---
