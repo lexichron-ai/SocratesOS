@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "socratesai-dev",
+    "staging": "socratesai-staging",
+    "production": "socratesai-prod"
+  }
+}
